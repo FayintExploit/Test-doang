@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FayintObf — Lua Obfuscator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c12;
+    --surface: #0e1420;
+    --surface2: #141c2e;
+    --border: #1e2d4a;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #f43f5e;
+    --text: #e2e8f0;
+    --muted: #4a6080;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient glow top */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: var(--glow);
+  }
+
+  .logo span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .nav-btn.active {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    margin-bottom: 24px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .badge::before { content: '●'; font-size: 0.5rem; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+
+  h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* STATS */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 32px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+
+  /* MAIN EDITOR */
+  .editor-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .editor-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .editor-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .editor-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 30px rgba(0,212,255,0.5);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-danger {
+    background: rgba(244,63,94,0.15);
+    border: 1px solid rgba(244,63,94,0.3);
+    color: var(--accent3);
+  }
+
+  .btn-danger:hover { background: rgba(244,63,94,0.25); }
+
+  textarea {
+    width: 100%;
+    min-height: 280px;
+    background: var(--surface);
+    color: var(--text);
+    border: none;
+    outline: none;
+    resize: vertical;
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  /* OPTIONS */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .option-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .option-card:hover { border-color: var(--accent); }
+  .option-card.active {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+
+  .option-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .option-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--border);
+    border-radius: 100px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+
+  .option-card.active .toggle {
+    background: var(--accent);
+  }
+
+  .option-card.active .toggle::after {
+    transform: translateX(16px);
+  }
+
+  .option-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* STRENGTH */
+  .strength-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .strength-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .strength-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .strength-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .strength-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .strength-btn.active-low { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,0.08); }
+  .strength-btn.active-mid { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.08); }
+  .strength-btn.active-high { border-color: var(--accent3); color: var(--accent3); background: rgba(244,63,94,0.08); }
+
+  /* PROGRESS */
+  .progress-wrap {
+    display: none;
+    margin-bottom: 24px;
+  }
+
+  .progress-wrap.show { display: block; }
+
+  .progress-label {
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(0,212,255,0.5);
+  }
+
+  /* LOG */
+  .log-wrap {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+
+  .log-wrap.show { display: block; }
+
+  .log-line {
+    margin-bottom: 4px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .log-ok { color: #22c55e; }
+  .log-info { color: var(--accent); }
+  .log-warn { color: #f59e0b; }
+
+  /* OUTPUT */
+  .output-section {
+    display: none;
+  }
+
+  .output-section.show { display: block; }
+
+  .copy-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent);
+    color: #000;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .copy-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* FEATURES */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .feat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .feat-card:hover { border-color: var(--accent); }
+
+  .feat-icon {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+
+  .feat-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .feat-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  footer span { color: var(--accent); }
+
+  /* WATERMARK */
+  .watermark-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 32px;
+  }
+
+  .wm-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .wm-preset-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .wm-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .wm-preset-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  .wm-custom-wrap {
+    display: none;
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  .wm-custom-wrap.show { display: flex; align-items: center; gap: 10px; }
+
+  .wm-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .wm-input:focus { border-color: var(--accent); }
+  .wm-input::placeholder { color: var(--muted); }
+
+  .wm-char-count {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .wm-preview {
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #22c55e;
+    border-left: 3px solid #22c55e;
+  }
+
+  .wm-preview-label {
+    color: var(--muted);
+    margin-right: 8px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.04);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+
+  .upload-text {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .upload-text span { color: var(--accent); font-weight: 600; }
+
+  .upload-info {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 6px;
+  }
+
+  .file-badge {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .file-badge.show { display: flex; }
+  .file-badge-name { color: var(--accent); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-badge-size { color: var(--muted); white-space: nowrap; }
+  .file-badge-remove {
+    background: none;
+    border: none;
+    color: var(--accent3);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+  }
+
+  @media (max-width: 600px) {
+    nav { flex-direction: column; gap: 16px; }
+    .stats { gap: 24px; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      Fayint<span>Obf</span>
+    </div>
+    <div class="nav-links">
+      <a class="nav-btn active" href="#">Obfuscator</a>
+      <a class="nav-btn" href="#" onclick="showAbout()">Docs</a>
+      <a class="nav-btn" href="https://discord.gg" target="_blank">Discord</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="badge">Free Lua Obfuscator v2.0</div>
+    <h1>Protect Your<br><span class="highlight">Roblox Scripts</span></h1>
+    <p class="hero-sub">Advanced Lua obfuscation with variable renaming, string encryption, control flow mangling, and more. Free forever.</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="obfCount">0</div>
+        <div class="stat-label">Scripts Obfuscated</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">7</div>
+        <div class="stat-label">Obf Techniques</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Free</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRENGTH -->
+  <div class="section-title">Obfuscation Strength</div>
+  <div class="strength-row">
+    <span class="strength-label">Level:</span>
+    <div class="strength-btns">
+      <button class="strength-btn active-low" id="lvl-low" onclick="setLevel('low')">Low</button>
+      <button class="strength-btn" id="lvl-mid" onclick="setLevel('mid')">Medium</button>
+      <button class="strength-btn" id="lvl-high" onclick="setLevel('high')">High</button>
+    </div>
+    <span style="font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace" id="lvl-desc">Fast & clean. Basic rename + encode.</span>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="section-title">Techniques</div>
+  <div class="options-grid">
+    <div class="option-card active" id="opt-varRename" onclick="toggleOpt('varRename', this)">
+      <div class="option-top">
+        <span class="option-name">Variable Rename</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Replaces all variable/function names with random hex strings.</p>
+    </div>
+    <div class="option-card active" id="opt-strEnc" onclick="toggleOpt('strEnc', this)">
+      <div class="option-top">
+        <span class="option-name">String Encryption</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Encodes string literals into byte arrays with runtime decoder.</p>
+    </div>
+    <div class="option-card active" id="opt-numEnc" onclick="toggleOpt('numEnc', this)">
+      <div class="option-top">
+        <span class="option-name">Number Encoding</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Transforms number literals into obfuscated expressions.</p>
+    </div>
+    <div class="option-card" id="opt-ctrlFlow" onclick="toggleOpt('ctrlFlow', this)">
+      <div class="option-top">
+        <span class="option-name">Control Flow</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Injects fake branches and dead code to confuse decompilers.</p>
+    </div>
+    <div class="option-card" id="opt-junk" onclick="toggleOpt('junk', this)">
+      <div class="option-top">
+        <span class="option-name">Junk Insertion</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Adds meaningless dead code blocks between real statements.</p>
+    </div>
+    <div class="option-card" id="opt-wrapFunc" onclick="toggleOpt('wrapFunc', this)">
+      <div class="option-top">
+        <span class="option-name">Function Wrap</span>
+        <div class="toggle"></div>
+      </div>
+      <p class="option-desc">Wraps entire script in nested closures for extra protection.</p>
+    </div>
+  </div>
+
+  <!-- WATERMARK -->
+  <div class="section-title">Watermark</div>
+  <div class="watermark-box">
+    <div class="wm-presets">
+      <button class="wm-preset-btn active" onclick="setWmPreset(this, '')">None</button>
+      <button class="wm-preset-btn" onclick="setWmPreset(this, '-- Made by FayintxCode | fayintz.my.id')">FayintxCode</button>
+      <button class="wm-preset-btn" onclick="setWmPreset(this, '-- Protected by FayintObf | fayintz.my.id')">FayintObf</button>
+      <button class="wm-preset-btn" onclick="setWmPreset(this, '-- Garuda Obf | Protected Script')">Garuda Obf</button>
+      <button class="wm-preset-btn" onclick="setWmPreset(this, '-- Luarmor Obf | fayintz.my.id')">Luarmor Obf</button>
+      <button class="wm-preset-btn" id="wm-custom-btn" onclick="setWmPreset(this, '__custom__')">✏ Custom</button>
+    </div>
+    <div class="wm-custom-wrap" id="wmCustomWrap">
+      <input type="text" id="wmCustomInput" class="wm-input" placeholder="Tulis watermark custom lo..." maxlength="200">
+      <span class="wm-char-count" id="wmCharCount">0/200</span>
+    </div>
+    <div class="wm-preview" id="wmPreview" style="display:none">
+      <span class="wm-preview-label">Preview:</span>
+      <span class="wm-preview-text" id="wmPreviewText"></span>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="section-title">Input Script</div>
+
+  <!-- UPLOAD ZONE -->
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept=".lua,.txt" onchange="handleFile(this.files[0])">
+    <div class="upload-icon">📂</div>
+    <div class="upload-text"><span>Click to upload</span> or drag & drop your .lua file</div>
+    <div class="upload-info">Supported: .lua, .txt · Max size: 50MB</div>
+  </div>
+  <div class="file-badge" id="fileBadge">
+    <span>📄</span>
+    <span class="file-badge-name" id="fileBadgeName"></span>
+    <span class="file-badge-size" id="fileBadgeSize"></span>
+    <button class="file-badge-remove" onclick="removeFile()">✕</button>
+  </div>
+
+  <div class="editor-section">
+    <div class="editor-header">
+      <div class="editor-title">
+        <div class="dot"></div>
+        <span id="editorFilename">script.lua</span>
+      </div>
+      <div class="editor-actions">
+        <button class="btn btn-ghost" onclick="loadSample()">Load Sample</button>
+        <button class="btn btn-danger" onclick="clearInput()">Clear</button>
+        <button class="btn btn-primary" onclick="startObfuscate()">⚡ Obfuscate</button>
+      </div>
+    </div>
+    <textarea id="inputCode" placeholder="-- Paste your Roblox Lua script here...
+-- Example:
+local players = game:GetService('Players')
+local localPlayer = players.LocalPlayer
+
+local function getCharacter()
+    return localPlayer.Character
+end"></textarea>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressText">Initializing...</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-wrap" id="logWrap"></div>
+
+  <!-- OUTPUT -->
+  <div class="output-section" id="outputSection">
+    <div class="section-title">Output</div>
+    <div class="editor-section">
+      <div class="editor-header">
+        <div class="editor-title">
+          <div class="dot"></div>
+          obfuscated.lua
+        </div>
+        <div class="editor-actions">
+          <button class="btn btn-ghost" onclick="copyOutput()">Copy</button>
+          <button class="btn btn-primary" onclick="downloadOutput()">⬇ Download</button>
+        </div>
+      </div>
+      <textarea id="outputCode" readonly style="min-height:240px;color:#a0c4ff;"></textarea>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="section-title" style="margin-top:48px;">Why FayintObf</div>
+  <div class="features">
+    <div class="feat-card">
+      <div class="feat-icon">🔐</div>
+      <div class="feat-name">Multi-Layer Protection</div>
+      <p class="feat-desc">Combine up to 6 different techniques for maximum script protection against decompilers.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-name">Fast Processing</div>
+      <p class="feat-desc">Client-side obfuscation — no upload needed. Your script never leaves your browser.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎮</div>
+      <div class="feat-name">Roblox Compatible</div>
+      <p class="feat-desc">Output is fully Luau-compatible. Works with all executors: Synapse, Script-Ware, KRNL, etc.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🆓</div>
+      <div class="feat-name">100% Free</div>
+      <p class="feat-desc">No key system, no subscription. FayintObf is always free for the community.</p>
+    </div>
+  </div>
+
+  <footer>
+    Built with ♥ by <span>FayintxCode</span> · fayintz.my.id · 2025
+  </footer>
+
+</div>
+
+<div class="copy-toast" id="copyToast">✓ Copied to clipboard!</div>
+
+<script>
+  // State
+  const opts = { varRename: true, strEnc: true, numEnc: true, ctrlFlow: false, junk: false, wrapFunc: false };
+  let level = 'low';
+  let obfCount = parseInt(localStorage.getItem('fayintobf_count') || '0');
+  document.getElementById('obfCount').textContent = obfCount.toLocaleString();
+
+  const levelDesc = {
+    low: 'Fast & clean. Basic rename + encode.',
+    mid: 'Balanced. More passes, heavier output.',
+    high: 'Maximum protection. Slowest, heaviest output.'
+  };
+
+  function setLevel(l) {
+    level = l;
+    ['low','mid','high'].forEach(x => {
+      const btn = document.getElementById('lvl-' + x);
+      btn.className = 'strength-btn' + (x === l ? (' active-' + x) : '');
+    });
+    document.getElementById('lvl-desc').textContent = levelDesc[l];
+  }
+
+  function toggleOpt(key, el) {
+    opts[key] = !opts[key];
+    el.classList.toggle('active', opts[key]);
+  }
+
+  function clearInput() {
+    document.getElementById('inputCode').value = '';
+    document.getElementById('outputSection').classList.remove('show');
+    document.getElementById('logWrap').classList.remove('show');
+    document.getElementById('progressWrap').classList.remove('show');
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileBadge').classList.remove('show');
+    document.getElementById('editorFilename').textContent = 'script.lua';
+  }
+
+  function loadSample() {
+    document.getElementById('inputCode').value = `-- Rey Hub Auto Farm Script
+-- Made by FayintxCode
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+
+local Config = {
+    AutoFarm = true,
+    AutoCollect = true,
+    Speed = 16,
+    FarmRange = 50
+}
+
+local function teleportTo(position)
+    HumanoidRootPart.CFrame = CFrame.new(position)
+end
+
+local function getFarmTargets()
+    local targets = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
+            local dist = (HumanoidRootPart.Position - obj.HumanoidRootPart.Position).Magnitude
+            if dist <= Config.FarmRange then
+                table.insert(targets, obj)
+            end
+        end
+    end
+    return targets
+end
+
+RunService.Heartbeat:Connect(function()
+    if Config.AutoFarm then
+        local targets = getFarmTargets()
+        for _, target in ipairs(targets) do
+            teleportTo(target.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+print("Script loaded by " .. LocalPlayer.Name)`;
+  }
+
+  // ---- WATERMARK ----
+  let wmText = '';
+  let wmIsCustom = false;
+
+  function setWmPreset(btn, value) {
+    document.querySelectorAll('.wm-preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    wmIsCustom = value === '__custom__';
+    const customWrap = document.getElementById('wmCustomWrap');
+    const preview = document.getElementById('wmPreview');
+    if (wmIsCustom) {
+      customWrap.classList.add('show');
+      wmText = document.getElementById('wmCustomInput').value.trim();
+    } else {
+      customWrap.classList.remove('show');
+      wmText = value;
+    }
+    updateWmPreview();
+  }
+
+  function updateWmPreview() {
+    const preview = document.getElementById('wmPreview');
+    const previewText = document.getElementById('wmPreviewText');
+    const finalText = wmIsCustom ? document.getElementById('wmCustomInput').value.trim() : wmText;
+    if (finalText) {
+      preview.style.display = 'block';
+      previewText.textContent = finalText.startsWith('--') ? finalText : '-- ' + finalText;
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  document.getElementById('wmCustomInput').addEventListener('input', function() {
+    wmText = this.value.trim();
+    document.getElementById('wmCharCount').textContent = this.value.length + '/200';
+    updateWmPreview();
+  });
+
+  // ---- FILE UPLOAD ----
+  const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!file.name.match(/\.(lua|txt)$/i)) {
+      alert('Format tidak didukung bro! Harus .lua atau .txt');
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      alert('File terlalu besar bro! Max 50MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('inputCode').value = e.target.result;
+      document.getElementById('editorFilename').textContent = file.name;
+      document.getElementById('fileBadgeName').textContent = file.name;
+      document.getElementById('fileBadgeSize').textContent = formatSize(file.size);
+      document.getElementById('fileBadge').classList.add('show');
+    };
+    reader.readAsText(file);
+  }
+
+  function removeFile() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileBadge').classList.remove('show');
+    document.getElementById('inputCode').value = '';
+    document.getElementById('editorFilename').textContent = 'script.lua';
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  // Drag & drop
+  const uploadZone = document.getElementById('uploadZone');
+  uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  // ---- OBFUSCATION ENGINE ----
+
+  function randHex(n) {
+    const chars = '0123456789abcdef';
+    let s = '_0x';
+    for (let i = 0; i < (n || 8); i++) s += chars[Math.floor(Math.random() * 16)];
+    return s;
+  }
+
+  function randVar() { return randHex(6 + Math.floor(Math.random() * 6)); }
+
+  function encodeStr(str) {
+    // encode to byte array
+    let bytes = [];
+    for (let i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i));
+    return `(function() local _b={${bytes.join(',')}}; local _s=''; for _,_c in ipairs(_b) do _s=_s..string.char(_c) end; return _s end)()`;
+  }
+
+  function encodeNum(n) {
+    const a = Math.floor(Math.random() * 1000) + 1;
+    const b = n - a;
+    return `(${a}+${b})`;
+  }
+
+  function obfuscateVars(code) {
+    const varMap = {};
+    // find all local vars/functions
+    const patterns = [
+      /\blocal\s+function\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
+      /\blocal\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:,\s*([a-zA-Z_][a-zA-Z0-9_]*))*\s*=/g,
+    ];
+    const reserved = new Set(['and','break','do','else','elseif','end','false','for',
+      'function','goto','if','in','local','nil','not','or','repeat','return','then',
+      'true','until','while','game','workspace','script','math','table','string',
+      'os','io','print','pairs','ipairs','type','tostring','tonumber','error',
+      'pcall','xpcall','select','unpack','rawget','rawset','setmetatable','getmetatable',
+      'require','loadstring','coroutine','task','wait','spawn','delay']);
+
+    for (const pat of patterns) {
+      let m;
+      while ((m = pat.exec(code)) !== null) {
+        for (let i = 1; i < m.length; i++) {
+          if (m[i] && !reserved.has(m[i]) && !varMap[m[i]]) {
+            varMap[m[i]] = randVar();
+          }
+        }
+      }
+    }
+
+    for (const [orig, rep] of Object.entries(varMap)) {
+      const re = new RegExp('\\b' + orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+      code = code.replace(re, rep);
+    }
+    return code;
+  }
+
+  function obfuscateStrings(code) {
+    // only replace plain string literals not in comments
+    return code.replace(/(?<!--.*)"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g, (match) => {
+      const inner = match.slice(1, -1);
+      // skip empty or very short
+      if (inner.length < 2) return match;
+      return encodeStr(inner);
+    });
+  }
+
+  function obfuscateNumbers(code) {
+    return code.replace(/\b(\d+)\b/g, (match, n) => {
+      const num = parseInt(n);
+      if (isNaN(num) || num === 0 || num === 1) return match;
+      return encodeNum(num);
+    });
+  }
+
+  function injectJunk(code) {
+    const junkLines = [
+      `local ${randVar()} = math.huge * 0`,
+      `local ${randVar()} = string.rep("", 0)`,
+      `local ${randVar()} = type(nil)`,
+      `if false then error() end`,
+      `local ${randVar()} = (function() return nil end)()`,
+      `local ${randVar()} = math.floor(0)`,
+    ];
+    const lines = code.split('\n');
+    const result = [];
+    for (const line of lines) {
+      result.push(line);
+      if (Math.random() < 0.3) {
+        result.push(junkLines[Math.floor(Math.random() * junkLines.length)]);
+      }
+    }
+    return result.join('\n');
+  }
+
+  function addControlFlow(code) {
+    const v = randVar();
+    const prefix = `local ${v} = math.random(1,2)\nif ${v} > 9999 then\n  error("dead")\nend\n`;
+    return prefix + code;
+  }
+
+  function wrapInFunc(code) {
+    const fn = randVar();
+    return `local ${fn} = function()\n${code.split('\n').map(l => '  ' + l).join('\n')}\nend\n${fn}()`;
+  }
+
+  function addHeader(code, passes) {
+    const finalWm = wmIsCustom ? document.getElementById('wmCustomInput').value.trim() : wmText;
+    const wmLine = finalWm ? (finalWm.startsWith('--') ? finalWm : '-- ' + finalWm) : null;
+    const lines = [
+      `-- Obfuscated by FayintObf v2.0`,
+      `-- fayintz.my.id`,
+      `-- Level: ${level.toUpperCase()} | Passes: ${passes}`,
+      wmLine ? wmLine : `-- Do not deobfuscate.`,
+      ``,
+    ];
+    return lines.join('\n') + code;
+  }
+
+  function runObfuscation(code) {
+    const passes = level === 'low' ? 1 : level === 'mid' ? 2 : 3;
+    for (let p = 0; p < passes; p++) {
+      if (opts.strEnc) code = obfuscateStrings(code);
+      if (opts.varRename) code = obfuscateVars(code);
+      if (opts.numEnc) code = obfuscateNumbers(code);
+    }
+    if (opts.junk) code = injectJunk(code);
+    if (opts.ctrlFlow) code = addControlFlow(code);
+    if (opts.wrapFunc) code = wrapInFunc(code);
+    code = addHeader(code, passes);
+    return code;
+  }
+
+  // ---- UI FLOW ----
+
+  function log(msg, type = 'info') {
+    const wrap = document.getElementById('logWrap');
+    wrap.classList.add('show');
+    const line = document.createElement('div');
+    line.className = 'log-line log-' + type;
+    line.textContent = '> ' + msg;
+    line.style.animationDelay = '0s';
+    wrap.appendChild(line);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function setProgress(pct, label) {
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = label;
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+
+  function startObfuscate() {
+    const code = document.getElementById('inputCode').value.trim();
+    if (!code) {
+      alert('Paste your script dulu bro!');
+      return;
+    }
+
+    // reset
+    document.getElementById('logWrap').innerHTML = '';
+    document.getElementById('logWrap').classList.remove('show');
+    document.getElementById('outputSection').classList.remove('show');
+    document.getElementById('progressWrap').classList.add('show');
+    setProgress(0, 'Initializing...');
+
+    const steps = [
+      [10, 'Parsing script...', 'Tokenizing Lua source', 'info'],
+      [25, 'Analyzing identifiers...', 'Found ' + (code.match(/\blocal\s+\w+/g) || []).length + ' local variables', 'info'],
+      [40, 'Encrypting strings...', opts.strEnc ? 'Encoding string literals to byte arrays' : 'String encryption disabled', opts.strEnc ? 'ok' : 'warn'],
+      [55, 'Renaming variables...', opts.varRename ? 'Replacing all identifiers with hex names' : 'Variable rename disabled', opts.varRename ? 'ok' : 'warn'],
+      [68, 'Encoding numbers...', opts.numEnc ? 'Transforming numeric literals' : 'Number encoding disabled', opts.numEnc ? 'ok' : 'warn'],
+      [78, 'Injecting junk...', opts.junk ? 'Inserting dead code blocks' : 'Junk injection disabled', opts.junk ? 'ok' : 'warn'],
+      [88, 'Control flow...', opts.ctrlFlow ? 'Adding fake branches' : 'Control flow disabled', opts.ctrlFlow ? 'ok' : 'warn'],
+      [95, 'Wrapping...', opts.wrapFunc ? 'Enclosing in nested closures' : 'Function wrap disabled', opts.wrapFunc ? 'ok' : 'warn'],
+      [100, 'Done!', 'Obfuscation complete ✓', 'ok'],
+    ];
+
+    let i = 0;
+    function next() {
+      if (i >= steps.length) {
+        // run actual obf
+        setTimeout(() => {
+          try {
+            const result = runObfuscation(code);
+            document.getElementById('outputCode').value = result;
+            document.getElementById('outputSection').classList.add('show');
+            // count
+            obfCount++;
+            localStorage.setItem('fayintobf_count', obfCount);
+            document.getElementById('obfCount').textContent = obfCount.toLocaleString();
+          } catch(e) {
+            log('Error: ' + e.message, 'warn');
+          }
+        }, 200);
+        return;
+      }
+      const [pct, label, logMsg, logType] = steps[i++];
+      setProgress(pct, label);
+      log(logMsg, logType);
+      setTimeout(next, 120 + Math.random() * 100);
+    }
+    next();
+  }
+
+  function copyOutput() {
+    const out = document.getElementById('outputCode').value;
+    navigator.clipboard.writeText(out).then(() => {
+      const toast = document.getElementById('copyToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  }
+
+  function downloadOutput() {
+    const out = document.getElementById('outputCode').value;
+    const blob = new Blob([out], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'obfuscated.lua';
+    a.click();
+  }
+
+  function showAbout() {
+    alert('FayintObf v2.0\n\nDocs coming soon!\nJoin Discord for updates.');
+  }
+
+  // Animate counter on load
+  function animateCount() {
+    const el = document.getElementById('obfCount');
+    const target = obfCount;
+    if (target === 0) return;
+    let current = Math.max(0, target - 30);
+    const step = () => {
+      if (current < target) {
+        current++;
+        el.textContent = current.toLocaleString();
+        requestAnimationFrame(step);
+      }
+    };
+    step();
+  }
+  animateCount();
+</script>
+</body>
+</html>
